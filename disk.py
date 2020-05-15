@@ -8,7 +8,7 @@ from logger import get_logger
 import logging
 
 logger = get_logger('disk')
-logger.setLevel(logging.INFO)
+# logger.setLevel(logging.INFO)
 
 
 class Disk:
@@ -86,11 +86,17 @@ class Disk:
 
         logger.info(f'Подготовка к копированию...')
         for root, dirs, files in os.walk(self.PATH):
+            p = root.split(self.PATH)[1].strip(os.path.sep)
+            if p and p.split("/")[-1][0] == '.':
+                continue
             files_count += len(files)
 
         for root, dirs, files in os.walk(self.PATH):
             p = root.split(self.PATH)[1].strip(os.path.sep)
             dir_path = posixpath.join(self.REMOTE_PATH, p)
+            if p and p.split("/")[-1][0] == '.':
+                logger.warning(f'В папке оригинале найдена скрытая папка {posixpath.join(self.PATH, p)}')
+                continue
 
             try:
                 self.api.mkdir(dir_path)
@@ -98,6 +104,9 @@ class Disk:
                 pass
 
             for file in files:
+                if file == '.DS_Store':
+                    this_file += 1
+                    continue
                 file_path = posixpath.join(dir_path, file)
                 p_sys = p.replace("/", os.path.sep)
                 in_path = os.path.join(self.PATH, p_sys, file)
